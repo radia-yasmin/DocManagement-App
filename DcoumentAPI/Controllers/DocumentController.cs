@@ -1,5 +1,4 @@
 ﻿using DcoumentAPI.Domain.Dtos;
-using DcoumentAPI.Domain.EntityModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,17 +6,17 @@ namespace DcoumentAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class FileUploadController : ControllerBase
+    public class DocumentController : ControllerBase
     {
         private readonly IWebHostEnvironment _environment;
 
-        public FileUploadController(IWebHostEnvironment environment)
+        public DocumentController(IWebHostEnvironment environment)
         {
             _environment = environment;
         }
 
-        [HttpPost("UploadFile")]
-        public IActionResult UploadFile([FromForm] FileUploadDto model)
+        [HttpPost("UploadDocument")]
+        public IActionResult UploadDocument([FromForm] FileUploadDto model)
         {
             try
             {

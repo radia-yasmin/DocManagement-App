@@ -1,9 +1,7 @@
 using DcoumentAPI.Domain.EntityModels;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
-using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,7 +10,17 @@ builder.Services.AddDbContext<DocumentDbContext>(options => options.UseSqlServer
 builder.Services.AddIdentity<Users, IdentityRole>()
     .AddEntityFrameworkStores<DocumentDbContext>()
     .AddDefaultTokenProviders();
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost", builder =>
+    {
+        builder
+            .WithOrigins("https://localhost:44320")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials(); // If you need to include credentials (e.g., cookies) in your requests
+    });
+});
 // Add services to the container.
 
 builder.Services.AddControllers().AddJsonOptions(options =>
@@ -29,6 +37,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseCors("AllowLocalhost");
 
 app.UseHttpsRedirection();
 
