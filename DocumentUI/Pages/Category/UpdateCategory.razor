@@ -1,0 +1,71 @@
+﻿@page "/Category/UpdateCategory/{id}"
+@inject HttpClient httpClient
+@inject NavigationManager navigationManager
+
+<h3>Update Category</h3>
+
+@if (category == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <form @onsubmit="UpdateCategoryRecord">
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="form-group">
+                    <label for="categoryName">Category Name:</label>
+                    <input id="categoryName" class="form-control" @bind="category.Name" />
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary mt-2">Update Category</button>
+                </div>
+            </div>
+        </div>
+    </form>
+}
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+    private Category category;
+
+    private string newCategoryName;
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchCategoryDetails();
+    }
+
+    private async Task FetchCategoryDetails()
+    {
+        var apiUrl = $"https://localhost:44334/api/Category/GetCategory/{int.Parse(id)}";
+        category = await httpClient.GetFromJsonAsync<Category>(apiUrl);
+    }
+
+    private async Task UpdateCategoryRecord()
+    {
+        var apiUrl = $"https://localhost:44334/api/Category";
+
+        var response = await httpClient.PutAsJsonAsync(apiUrl, category);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Redirect to the Categories page after successful update
+            navigationManager.NavigateTo("/Category/Categories");
+        }
+        else
+        {
+            // Handle the error, log, or display an error message
+        }
+    }
+
+    // Define a class to represent the data structure returned by the API
+    public class Category
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        // Add additional properties as needed
+    }
+}

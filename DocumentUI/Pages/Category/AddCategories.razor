@@ -1,0 +1,56 @@
+﻿@page "/Category/AddCategory"
+@using System.Text.Json
+@inject HttpClient httpClient
+@inject NavigationManager navigationManager
+
+<h3>Create Category</h3>
+
+
+<form @onsubmit="CreateCategory">
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="form-group">
+                <label for="categoryName">Category Name:</label>
+                <input id="categoryName" class="form-control" @bind="newCategoryName" />
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary mt-2">Create Category</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add other form fields as needed -->
+
+</form>
+
+@if (isCategoryCreated)
+{
+    <p>Category created successfully!</p>
+}
+
+@code {
+    private string newCategoryName;
+    private bool isCategoryCreated;
+
+    private async Task CreateCategory()
+    {
+        var apiUrl = "https://localhost:44334/api/Category";
+
+        var newCategory = new { Name = newCategoryName };
+        var content = new StringContent(JsonSerializer.Serialize(newCategory), System.Text.Encoding.UTF8, "application/json");
+
+        var response = await httpClient.PostAsync(apiUrl, content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            navigationManager.NavigateTo("/Category/Categories");
+        }
+        else
+        {
+            // Handle the error, log, or display an error message
+            isCategoryCreated = false;
+        }
+    }
+}

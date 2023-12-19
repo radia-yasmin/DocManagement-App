@@ -1,0 +1,97 @@
+﻿@page "/Category/Categories"
+@inject HttpClient httpClient
+@inject NavigationManager navigationManager
+
+<h3>Categories</h3>
+
+@if (categories == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+
+    <div class="row">
+        <div class="col-lg-6">
+            <h3> All Categories</h3>
+        </div>
+        <div class="col-lg-6">
+            <a class="btn btn-primary pull-right" href="Category/AddCategory" style="float:right">Create</a>
+        </div>
+    </div>
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>Category Name</th>
+                <th>Total Subcategories</th>
+                <th>Action</th>
+                <!-- Add additional columns as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var category in categories)
+            {
+                <tr>
+                    <td>@category.Name</td>
+                    <td>@category.SubCategories.Count()</td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => DeleteCategory(category.Id)">Delete</button>
+                        <button class="btn btn-primary" @onclick="() => EditCategory(category.Id)">Edit</button>
+                    </td>
+                    <!-- Add additional columns as needed -->
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Category> categories;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Replace the URL with your API endpoint
+        var apiUrl = "https://localhost:44334/api/Category/GetCategories";
+
+        // Make the HTTP request
+        categories = await httpClient.GetFromJsonAsync<List<Category>>(apiUrl);
+    }
+
+    private async Task DeleteCategory(int categoryId)
+    {
+        var apiUrl = $"https://localhost:44334/api/Category/{categoryId}";
+
+        var response = await httpClient.DeleteAsync(apiUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Reload categories after deletion
+            await OnInitializedAsync();
+        }
+        else
+        {
+            // Handle the error, log, or display an error message
+        }
+    }
+
+    private void EditCategory(int id)
+    {
+        // Navigate to the Update Category page with the selected category ID
+        navigationManager.NavigateTo($"/Category/UpdateCategory/{id}");
+    }
+
+    // Define a class to represent the data structure returned by the API
+    public class Category
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public List<SubCategory> SubCategories { get; set; }
+    }
+
+    public class SubCategory
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public int CategoryId { get; set; }
+    }
+}
