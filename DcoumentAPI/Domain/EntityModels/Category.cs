@@ -9,5 +9,6 @@ namespace DcoumentAPI.Domain.EntityModels
         [MaxLength(250)]
         public string Name { get; set; }
         public virtual ICollection<SubCategories> SubCategories { get; set; }
+        public virtual ICollection<Document> Documents { get; set; }
     }
 }

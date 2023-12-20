@@ -14,7 +14,7 @@ namespace DcoumentAPI.Domain.EntityModels
 
         public DbSet<Category> Categories { get; set; }
         public DbSet<SubCategories> SubCategories { get; set; }
-        public DbSet<DocumentUploadModel> Documents { get; set; }
+        public DbSet<Document> Documents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

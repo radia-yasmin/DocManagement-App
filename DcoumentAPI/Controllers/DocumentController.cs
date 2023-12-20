@@ -18,13 +18,13 @@ namespace DcoumentAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<DocumentUploadModel>>> GetDocuments()
+        public async Task<ActionResult<IEnumerable<Document>>> GetDocuments()
         {
             return await _context.Documents.ToListAsync();
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<DocumentUploadModel>> GetDocument(int id)
+        public async Task<ActionResult<Document>> GetDocument(int id)
         {
             var document = await _context.Documents.FindAsync(id);
 
@@ -37,7 +37,7 @@ namespace DcoumentAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<DocumentUploadModel>> CreateDocument([FromBody] DocumentUploadModel document)
+        public async Task<ActionResult<Document>> CreateDocument([FromBody] Document document)
         {
             _context.Documents.Add(document);
             await _context.SaveChangesAsync();
@@ -46,7 +46,7 @@ namespace DcoumentAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDocument(int id, [FromBody] DocumentUploadModel document)
+        public async Task<IActionResult> UpdateDocument(int id, [FromBody] Document document)
         {
             if (id != document.Id)
             {

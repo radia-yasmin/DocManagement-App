@@ -1,0 +1,90 @@
+﻿@page "/SubCategory/SubCategories"
+@inject HttpClient httpClient
+@inject NavigationManager navigationManager
+
+<h3>Sub Categories</h3>
+
+@if (Subcategory == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+
+    <div class="row">
+        <div class="col-lg-6">
+            <h3> All Categories</h3>
+        </div>
+        <div class="col-lg-6">
+            <a class="btn btn-primary pull-right" href="SubCategory/AddSubCategory" style="float:right">Create</a>
+        </div>
+    </div>
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>Sub Category Name</th>
+                <th>Category</th>
+                <th>Action</th>
+                <!-- Add additional columns as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Subcategory)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>@item.Category.Name</td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => DeleteCategory(item.Id)">Delete</button>
+                        @* <button class="btn btn-primary" @onclick="() => EditCategory(category.Id)">Edit</button> *@
+                    </td>
+                    <!-- Add additional columns as needed -->
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<SubCategory> Subcategory;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Replace the URL with your API endpoint
+        var apiUrl = "https://localhost:44334/api/SubCategory/GetSubCategories";
+
+        // Make the HTTP request
+        Subcategory = await httpClient.GetFromJsonAsync<List<SubCategory>>(apiUrl);
+    }
+
+    private async Task DeleteCategory(int categoryId)
+    {
+        var apiUrl = $"https://localhost:44334/api/SubCategory/{categoryId}";
+
+        var response = await httpClient.DeleteAsync(apiUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Reload categories after deletion
+            await OnInitializedAsync();
+        }
+        else
+        {
+            // Handle the error, log, or display an error message
+        }
+    }
+
+    public class SubCategory
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public int CategoryId { get; set; }
+        public Category Category { get; set; }
+    }
+
+    public class Category
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+}

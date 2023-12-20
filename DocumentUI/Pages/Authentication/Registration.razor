@@ -1,5 +1,81 @@
-﻿<h3>Registration</h3>
+﻿@page "/Authentication/Registration"
+@using System.Text.Json
+@inject HttpClient httpClient
+
+
+<h3>User Registration</h3>
+
+@if (registrationSuccess)
+{
+    <p>Registration successful!</p>
+}
+else
+{
+    <form @onsubmit="RegisterUser">
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label class="form-label" for="firstName">First Name:</label>
+                            <input type="text" id="firstName" class="form-control" minlength="2" @bind="@user.FirstName" required/>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label class="form-label" for="lastName">Last Name:</label>
+                            <input type="text" id="lastName" class="form-control" minlength="2" @bind="@user.LastName" required />
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label class="form-label" for="email">Email:</label>
+                            <input type="email" id="email" class="form-control" @bind="@user.Email" required />
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label class="form-label" for="password">Password:</label>
+                            <input type="password" id="password" class="form-control" minlength="6" @bind="@user.Password" required />
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-success mt-2" type="submit">Register</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+}
 
 @code {
+    private UserDto user = new UserDto();
+    private bool registrationSuccess = false;
 
+    private async Task RegisterUser()
+    {
+        // Perform validation before making the API call
+        var apiUrl = "https://localhost:44334/api/Registration/UserRegister";
+        var content = new StringContent(JsonSerializer.Serialize(user), System.Text.Encoding.UTF8, "application/json");
+        // Make the API call using HttpClient
+        var response = await httpClient.PostAsync(apiUrl, content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            registrationSuccess = true;
+        }
+        else
+        {
+            // Handle registration failure
+            // You might want to display an error message
+        }
+    }
+
+    public class UserDto
+    {
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
 }
