@@ -1,6 +1,6 @@
 ﻿namespace DcoumentAPI.Domain.Dtos
 {
-    public class FileUploadDto
+    public class DocumentUploadDto
     {
         public string Title { get; set; }
         public string Description { get; set; }

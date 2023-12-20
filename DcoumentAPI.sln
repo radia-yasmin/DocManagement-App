@@ -5,7 +5,7 @@ VisualStudioVersion = 17.9.34407.89
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DcoumentAPI", "DcoumentAPI\DcoumentAPI.csproj", "{891E3FAA-B6B3-413D-8366-BD13ECC61F8A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentUI", "DocumentUI\DocumentUI.csproj", "{02360D16-1415-4C1B-8F8E-EE92227E16B3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DocumentUI", "DocumentUI\DocumentUI.csproj", "{02360D16-1415-4C1B-8F8E-EE92227E16B3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

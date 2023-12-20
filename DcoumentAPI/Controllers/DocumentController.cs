@@ -1,6 +1,8 @@
 ﻿using DcoumentAPI.Domain.Dtos;
+using DcoumentAPI.Domain.EntityModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DcoumentAPI.Controllers
 {
@@ -8,49 +10,88 @@ namespace DcoumentAPI.Controllers
     [ApiController]
     public class DocumentController : ControllerBase
     {
-        private readonly IWebHostEnvironment _environment;
+        private readonly DocumentDbContext _context;
 
-        public DocumentController(IWebHostEnvironment environment)
+        public DocumentController(DocumentDbContext context)
         {
-            _environment = environment;
+            _context = context;
         }
 
-        [HttpPost("UploadDocument")]
-        public IActionResult UploadDocument([FromForm] FileUploadDto model)
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<DocumentUploadModel>>> GetDocuments()
         {
+            return await _context.Documents.ToListAsync();
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<DocumentUploadModel>> GetDocument(int id)
+        {
+            var document = await _context.Documents.FindAsync(id);
+
+            if (document == null)
+            {
+                return NotFound();
+            }
+
+            return document;
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<DocumentUploadModel>> CreateDocument([FromBody] DocumentUploadModel document)
+        {
+            _context.Documents.Add(document);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetDocument), new { id = document.Id }, document);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateDocument(int id, [FromBody] DocumentUploadModel document)
+        {
+            if (id != document.Id)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(document).State = EntityState.Modified;
+
             try
             {
-                if (model.File == null || model.File.Length == 0)
-                {
-                    return BadRequest("File is missing or empty.");
-                }
-
-                var uploadsFolder = Path.Combine(_environment.ContentRootPath, "uploads");
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
-
-                var uniqueFileName = $"{Guid.NewGuid()}_{model.File.FileName}";
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    model.File.CopyTo(stream);
-                }
-
-                // Store only the file path in the database
-                model.FilePath = Path.Combine("uploads", uniqueFileName);
-
-                // Here you can save the file information (file path) to a database or perform other actions
-                // For example, you can store file metadata in a database table
-
-                return Ok("File uploaded successfully.");
+                await _context.SaveChangesAsync();
             }
-            catch (Exception ex)
+            catch (DbUpdateConcurrencyException)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                if (!DocumentExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
             }
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteDocument(int id)
+        {
+            var document = await _context.Documents.FindAsync(id);
+            if (document == null)
+            {
+                return NotFound();
+            }
+
+            _context.Documents.Remove(document);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool DocumentExists(int id)
+        {
+            return _context.Documents.Any(e => e.Id == id);
         }
     }
 }
