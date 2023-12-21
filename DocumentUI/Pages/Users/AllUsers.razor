@@ -1,0 +1,61 @@
+﻿@page "/Users/AllUsers"
+@inject HttpClient httpClient
+@inject NavigationManager navigationManager
+
+
+<h3>All Users</h3>
+
+@if (model == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+
+    <div class="row">
+        <div class="col-lg-6">
+            <h3> All Users</h3>
+        </div>
+    </div>
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>User Role</th>
+                <!-- Add additional columns as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in model)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>@item.Email</td>
+                    <td>@item.UserRole</td>
+                    <!-- Add additional columns as needed -->
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<UserRecord> model;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Replace the URL with your API endpoint
+        var apiUrl = "https://localhost:44334/api/Users/GetAllUsers";
+
+        // Make the HTTP request
+        model = await httpClient.GetFromJsonAsync<List<UserRecord>>(apiUrl);
+    }
+
+    public class UserRecord
+    {
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string UserRole { get; set; }
+    }
+}

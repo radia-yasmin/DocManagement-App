@@ -10,10 +10,10 @@ namespace DcoumentAPI.Controllers
     [ApiController]
     public class LoginController : ControllerBase
     {
-        private readonly SignInManager<LoginDto> _signInManager;
+        private readonly SignInManager<Users> _signInManager;
         private readonly UserManager<Users> _userManager;
 
-        public LoginController(SignInManager<LoginDto> signInManager, UserManager<Users> userManager)
+        public LoginController(SignInManager<Users> signInManager, UserManager<Users> userManager)
         {
             _signInManager = signInManager;
             _userManager = userManager;
@@ -31,7 +31,7 @@ namespace DcoumentAPI.Controllers
 
             if (user == null)
             {
-                return BadRequest("Invalid login attempt.");
+                return BadRequest($"User with {model.UserName} doesn't exist.");
             }
 
             var result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, isPersistent: false, lockoutOnFailure: false);
@@ -39,7 +39,9 @@ namespace DcoumentAPI.Controllers
             if (result.Succeeded)
             {
                 // You can customize the response as needed
-                return Ok("Login successful!");
+                var roles = await _userManager.GetRolesAsync(user);
+                var userData = new { Message = "Login successful!", Name = $"{user.FirstName} {user.LastName}", Email = user.Email, UserId = user.Id, UserRole=roles.FirstOrDefault() };
+                return Ok(userData);
             }
 
             if (result.IsLockedOut)
@@ -48,7 +50,7 @@ namespace DcoumentAPI.Controllers
             }
             else
             {
-                return BadRequest("Invalid login attempt.");
+                return BadRequest("Your Password is incorrect.");
             }
         }
     }

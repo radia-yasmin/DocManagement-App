@@ -1,25 +1,97 @@
 ﻿@page "/Authentication/Login"
+@using System.Text.Json
+@using DocumentUI.Services
+@using System.Text
 @inject HttpClient httpClient
 @inject NavigationManager navigationManager
+@inject IAuthService authService
 
-<h3>Login</h3>
+<p>Enter your credentials to log in:</p>
 
-<body>
-    <h2>Login</h2>
-    <form method="post">
-        <div>
-            <label asp-for="Username">Username:</label>
-            <input asp-for="Username" />
-            <span asp-validation-for="Username"></span>
+<form @onsubmit="SubmitForm">
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="form-label" for="username">Username:</label>
+                        <input type="text" id="username" class="form-control" @bind="model.UserName" required />
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="form-label" for="password">Password:</label>
+                        <input type="password" id="password" class="form-control" @bind="model.Password" required />
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-success mt-2" type="submit">Login</button>
+                </div>
+                <div class="col-12">
+                    <p class="mt-2">Don't have an account? <a href="Authentication/Registration">Create Account</a></p>
+                </div>
+            </div>
+
         </div>
-        <div>
-            <label asp-for="Password">Password:</label>
-            <input asp-for="Password" type="password" />
-            <span asp-validation-for="Password"></span>
-        </div>
-        <button type="submit">Login</button>
-    </form>
-</body>
+    </div>
+</form>
+
+@if (loginError != null)
+{
+    <p style="color: red;">@loginError </p>
+
+}
+
 @code {
+    private LoginDto model = new LoginDto();
+    private string loginError;
 
+    private async Task SubmitForm()
+    {
+        try
+        {
+            // Prepare the login data
+            var content = new StringContent(JsonSerializer.Serialize(model), System.Text.Encoding.UTF8, "application/json");
+            // Make a POST request to the login API
+            var response = await httpClient.PostAsync("https://localhost:44334/api/Login/login", content);
+            var rec = await response.Content.ReadAsStringAsync();
+            // Handle the response
+            if (response.IsSuccessStatusCode)
+            {
+                loginError = "Login successful!";
+
+                var user = await JsonSerializer.DeserializeAsync<UserDto>(
+                    new MemoryStream(Encoding.UTF8.GetBytes(rec)),
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+                authService.MarkUserAsAuthenticated(user.Name, user.UserId, user.UserRole);
+                navigationManager.NavigateTo("/");
+            }
+            else
+            {
+                loginError = rec;
+            }
+        }
+        catch (Exception ex)
+        {
+            loginError = $"An error occurred: {ex.Message}";
+        }
+    }
+
+
+    public class LoginDto
+    {
+        public string UserName { get; set; }
+
+        public string Password { get; set; }
+    }
+
+    public class UserDto
+    {
+        public string Message { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string UserId { get; set; }
+        public string UserRole { get; set; }
+    }
 }

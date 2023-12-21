@@ -22,13 +22,22 @@ namespace DcoumentAPI.Controllers
         [HttpGet("GetAllUsers")]
         public async Task<IActionResult> GetAllUsers()
         {
-            var users =await _userManager.Users.Select(c => new GetAllUsersDto()
+            List<GetAllUsersDto> userList = new List<GetAllUsersDto>();
+            var users =await _userManager.Users.ToListAsync();
+
+            if (users.Count() > 0)
             {
-                Name = c.FirstName + " " + c.LastName,
-                Email = c.Email,
-                UserRole = string.Join(",", _userManager.GetRolesAsync(c).Result.ToArray())
-            }).ToListAsync();
-            return Ok(users);
+                foreach (var item in users)
+                {
+                    GetAllUsersDto model = new GetAllUsersDto();
+                    var roles = await _userManager.GetRolesAsync(item);
+                    model.Email = item.Email;
+                    model.Name = item.FirstName + " " + item.LastName;
+                    model.UserRole = roles.FirstOrDefault();
+                    userList.Add(model);
+                }
+            }
+            return Ok(userList);
         }
     }
 }
