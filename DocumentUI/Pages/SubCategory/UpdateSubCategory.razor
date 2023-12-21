@@ -1,5 +1,96 @@
-﻿<h3>UpdateSubCategory</h3>
+﻿@page "/SubCategory/UpdateSubCategory/{id}"
+@inject HttpClient httpClient
+@inject NavigationManager navigationManager
+
+<h3>Update SubCategory</h3>
+
+@if (model == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <form @onsubmit="UpdateSubCategoryRecord">
+        <div class="row">
+            <div class="col-lg-4">
+                <div class="form-group">
+                    <label for="categoryName">Sub Category Name:</label>
+                    <input id="categoryName" class="form-control" @bind="model.Name" />
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="form-group">
+                    <label for="categoryName">Category</label>
+                    <select @bind="model.CategoryId" class="form-select">
+                        <option value="">Select a category</option>
+                        @if (categoriesList != null)
+                        {
+                            @foreach (var category in categoriesList)
+                            {
+                                <option value="@category.Id">@category.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary mt-2">Update Category</button>
+                </div>
+            </div>
+        </div>
+    </form>
+}
+
 
 @code {
+    [Parameter]
+    public string id { get; set; }
 
+    private SubCategory model;
+
+    private List<Category> categoriesList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        categoriesList = await httpClient.GetFromJsonAsync<List<Category>>("https://localhost:44334/api/Category/GetCategories");
+        await FetchSubCategoryDetails();
+    }
+
+    private async Task FetchSubCategoryDetails()
+    {
+        var apiUrl = $"https://localhost:44334/api/SubCategory/GetSubCategory/{int.Parse(id)}";
+        model = await httpClient.GetFromJsonAsync<SubCategory>(apiUrl);
+    }
+
+    private async Task UpdateSubCategoryRecord()
+    {
+        var apiUrl = $"https://localhost:44334/api/SubCategory";
+
+        var response = await httpClient.PutAsJsonAsync(apiUrl, model);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Redirect to the Categories page after successful update
+            navigationManager.NavigateTo("/SubCategory/SubCategories");
+        }
+        else
+        {
+            // Handle the error, log, or display an error message
+        }
+    }
+
+
+    public class SubCategory
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public int CategoryId { get; set; }
+    }
+
+    public class Category
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
 }

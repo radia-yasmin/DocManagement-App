@@ -11,17 +11,20 @@
         <div class="col-lg-4">
             <div class="form-group">
                 <label for="categoryName">Subcategory Name:</label>
-                <input id="categoryName" class="form-control" @bind="@model.Name" required />
+                <input id="categoryName" class="form-control" @bind="model.Name" required />
             </div>
         </div>
         <div class="col-lg-4">
             <div class="form-group">
                 <label for="categoryName">Category</label>
-                <select class="form-control" required @bind="@model.CategoryId">
-                    <option value="" selected>Please select..</option>
-                    @foreach (var item in categories)
+                <select @bind="model.CategoryId" class="form-select">
+                    <option value="">Select a category</option>
+                    @if (categoriesList != null)
                     {
-                        <option value="@item.Id">@item.Name</option>
+                        @foreach (var category in categoriesList)
+                        {
+                            <option value="@category.Id">@category.Name</option>
+                        }
                     }
                 </select>
             </div>
@@ -43,17 +46,15 @@
 }
 
 @code {
-    private bool isCategoryCreated;
-    private List<Category> categories;
     private SubCategory model = new SubCategory();
+    private List<Category> categoriesList;
+    private bool isCategoryCreated;
 
     protected override async Task OnInitializedAsync()
     {
-        // Replace the URL with your API endpoint
-        var apiUrl = "https://localhost:44334/api/Category/GetCategories";
+        categoriesList = await httpClient.GetFromJsonAsync<List<Category>>("https://localhost:44334/api/Category/GetCategories");
 
-        // Make the HTTP request
-        categories = await httpClient.GetFromJsonAsync<List<Category>>(apiUrl);
+        // await FetchCategorylist();
     }
 
     private async Task CreateSubCategory()
@@ -75,7 +76,7 @@
         }
     }
 
-    public class Category
+    public class Item
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -85,5 +86,11 @@
     {
         public string Name { get; set; }
         public int CategoryId { get; set; }
+    }
+
+    public class Category
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 }

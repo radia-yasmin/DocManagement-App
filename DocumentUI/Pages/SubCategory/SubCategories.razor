@@ -2,8 +2,6 @@
 @inject HttpClient httpClient
 @inject NavigationManager navigationManager
 
-<h3>Sub Categories</h3>
-
 @if (Subcategory == null)
 {
     <p>Loading...</p>
@@ -13,7 +11,7 @@ else
 
     <div class="row">
         <div class="col-lg-6">
-            <h3> All Categories</h3>
+            <h3>All Sub Categories</h3>
         </div>
         <div class="col-lg-6">
             <a class="btn btn-primary pull-right" href="SubCategory/AddSubCategory" style="float:right">Create</a>
@@ -36,7 +34,7 @@ else
                     <td>@item.Category.Name</td>
                     <td>
                         <button class="btn btn-danger" @onclick="() => DeleteCategory(item.Id)">Delete</button>
-                        @* <button class="btn btn-primary" @onclick="() => EditCategory(category.Id)">Edit</button> *@
+                        <button class="btn btn-primary" @onclick="() => EditCategory(item.Id)">Edit</button>
                     </td>
                     <!-- Add additional columns as needed -->
                 </tr>
@@ -72,6 +70,12 @@ else
         {
             // Handle the error, log, or display an error message
         }
+    }
+
+    private void EditCategory(int id)
+    {
+        // Navigate to the Update Category page with the selected category ID
+        navigationManager.NavigateTo($"/SubCategory/UpdateSubCategory/{id}");
     }
 
     public class SubCategory
