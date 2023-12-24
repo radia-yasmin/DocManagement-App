@@ -11,5 +11,6 @@ namespace DcoumentAPI.Domain.EntityModels
         [Required]
         [StringLength(50, MinimumLength = 2)]
         public string LastName { get; set; }
+        public virtual ICollection<Document> Documents { get; set; }
     }
 }

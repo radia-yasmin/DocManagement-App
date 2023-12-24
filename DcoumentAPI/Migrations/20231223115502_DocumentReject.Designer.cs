@@ -4,6 +4,7 @@ using DcoumentAPI.Domain.EntityModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DcoumentAPI.Migrations
 {
     [DbContext(typeof(DocumentDbContext))]
-    partial class DocumentDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231223115502_DocumentReject")]
+    partial class DocumentReject
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -72,13 +75,11 @@ namespace DcoumentAPI.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UploadedBy")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
-
-                    b.HasIndex("UploadedBy");
 
                     b.ToTable("Documents");
                 });
@@ -321,13 +322,7 @@ namespace DcoumentAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DcoumentAPI.Domain.EntityModels.Users", "Users")
-                        .WithMany("Documents")
-                        .HasForeignKey("UploadedBy");
-
                     b.Navigation("Category");
-
-                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("DcoumentAPI.Domain.EntityModels.SubCategories", b =>
@@ -397,11 +392,6 @@ namespace DcoumentAPI.Migrations
                     b.Navigation("Documents");
 
                     b.Navigation("SubCategories");
-                });
-
-            modelBuilder.Entity("DcoumentAPI.Domain.EntityModels.Users", b =>
-                {
-                    b.Navigation("Documents");
                 });
 #pragma warning restore 612, 618
         }

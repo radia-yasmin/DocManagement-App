@@ -1,0 +1,214 @@
+﻿@page "/Document/UpdateDocument/{id}"
+@inject HttpClient httpClient
+@using DocumentUI.Services
+@using System.Text.Json
+@inject IAuthService authService
+@inject NavigationManager navigationManager
+
+<PageTitle>Edit Document</PageTitle>
+
+<h3>Update Document</h3>
+
+<form @onsubmit="EditDocument">
+    <div class="row">
+        <div class="col-lg-4">
+            <input hidden="hidden" class="form-control" @bind="model.Id" />
+            <input hidden="hidden" class="form-control" @bind="model.UploadedBy" />
+            <input hidden="hidden" class="form-control" @bind="model.IsApproved" />
+            <input hidden="hidden" class="form-control" @bind="model.FilePath" />
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="form-label" for="Title">Title:</label>
+                        <input id="Title" class="form-control" @bind="model.Title" required />
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="form-label" for="Description">Description:</label>
+                        <textarea class="form-control" @bind="model.Description" required></textarea>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label for="categoryName">Category</label>
+                    <select class="form-select" @bind="model.CategoryId">
+                        <option value="">Select a category</option>
+                        @if (categoriesList != null)
+                        {
+                            @foreach (var category in categoriesList)
+                            {
+                                <option value="@category.Id">@category.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label>File</label>
+                    <a href="https://localhost:44334/api/Document/download/@model.Id">@model.FileName</a>
+                </div>
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="form-label" for="Description">Document file:</label>
+                        <InputFile OnChange="@LoadFiles" class="form-control" accept="application/pdf" />
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-success mt-2" type="submit">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+@if (error)
+{
+    <p class="error">@errMessage</p>
+}
+
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+
+
+    private List<Category> categoriesList;
+
+    private DocumentDto model = new DocumentDto();
+
+    private bool error;
+    private string errMessage;
+    private IBrowserFile file;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var apiUrl = $"https://localhost:44334/api/Document/{int.Parse(id)}";
+        model = await httpClient.GetFromJsonAsync<DocumentDto>(apiUrl);
+        categoriesList = await httpClient.GetFromJsonAsync<List<Category>>("https://localhost:44334/api/Category/GetCategories");
+    }
+
+    private void LoadFiles(InputFileChangeEventArgs e)
+    {
+        if (e.File.ContentType != "application/pdf")
+        {
+            error = true;
+            errMessage = "Please select only pdf file.";
+            return;
+        }
+        file = e.File;
+
+    }
+
+    private async Task EditDocument()
+    {
+        if (file == null)
+        {
+            var apiUrl = "https://localhost:44334/api/Document";
+
+            // var content = new StringContent(JsonSerializer.Serialize(model), System.Text.Encoding.UTF8, "application/json");
+
+            var responseDoc = await httpClient.PutAsJsonAsync(apiUrl, model);
+
+            if (responseDoc.IsSuccessStatusCode)
+            {
+                if (authService.RoleName == "User")
+                {
+                    navigationManager.NavigateTo("/Document/UserDocument");
+                }
+                else
+                {
+                    navigationManager.NavigateTo("/");
+                }
+            }
+            else
+            {
+                // Handle the error, log, or display an error message
+                error = true;
+                errMessage = "somethign is wrong";
+            }
+        }
+        else
+        {
+            try
+            {
+                var apiFileUrl = $"https://localhost:44334/api/Document/RemoveDocumentFile/{id}";
+
+                var responseFile = await httpClient.GetAsync(apiFileUrl);
+                if (responseFile.IsSuccessStatusCode)
+                {
+                    model.FileName = file.Name;
+                    using (var stream = file.OpenReadStream())
+                    using (var formData = new MultipartFormDataContent())
+                    {
+                        formData.Add(new StreamContent(stream), "file", file.Name);
+
+                        var response = await httpClient.PostAsync("https://localhost:44334/api/Document/UploadDocument", formData);
+                        var rec = await response.Content.ReadAsStringAsync();
+                        if (response.IsSuccessStatusCode)
+                        {
+                            model.FilePath = rec;
+                            model.UploadedBy = authService.UserId;
+                            var apiUrl = "https://localhost:44334/api/Document";
+
+                            // var content = new StringContent(JsonSerializer.Serialize(model), System.Text.Encoding.UTF8, "application/json");
+
+                            var responseDoc = await httpClient.PutAsJsonAsync(apiUrl, model);
+
+                            if (responseDoc.IsSuccessStatusCode)
+                            {
+                                if (authService.RoleName == "User")
+                                {
+                                    navigationManager.NavigateTo("/Document/UserDocument");
+                                }
+                                else
+                                {
+                                    navigationManager.NavigateTo("/");
+                                }
+                            }
+                            else
+                            {
+                                // Handle the error, log, or display an error message
+                                error = true;
+                                errMessage = "somethign is wrong";
+                            }
+                        }
+                        else
+                        {
+                            // Handle upload error
+                            Console.WriteLine("Upload failed: " + response.StatusCode);
+                        }
+                    }
+                }
+                else
+                {
+                    error = true;
+                    errMessage = "somethign is wrong";
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle other exceptions
+                Console.WriteLine("Error during upload: " + ex.Message);
+            }
+        }
+        
+    }
+
+    public class DocumentDto
+    {
+
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string FileName { get; set; }
+        public string FilePath { get; set; }
+        public string UploadedBy { get; set; }
+        public bool IsApproved { get; set; }
+        public int CategoryId { get; set; }
+    }
+
+    public class Category
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+}

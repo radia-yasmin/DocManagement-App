@@ -21,12 +21,12 @@
         @if (authService.RoleName == "Administration")
         {
             <div class="nav-item px-3">
-                <NavLink class="nav-link" href="/">
+                <NavLink class="nav-link" href="Document/PendingDocument">
                     <span class="oi oi-list-rich" aria-hidden="true"></span> Pending Document
                 </NavLink>
             </div>
             <div class="nav-item px-3">
-                <NavLink class="nav-link" href="/">
+                <NavLink class="nav-link" href="Document/ApprovedDocument">
                     <span class="oi oi-list-rich" aria-hidden="true"></span> Approved Document
                 </NavLink>
             </div>
@@ -51,8 +51,8 @@
         else
         {
             <div class="nav-item px-3">
-                <NavLink class="nav-link" href="/">
-                    <span class="oi oi-list-rich" aria-hidden="true"></span> Document
+                <NavLink class="nav-link" href="Document/UserDocument">
+                    <span class="oi oi-list-rich" aria-hidden="true"></span> Documents
                 </NavLink>
             </div>
         }

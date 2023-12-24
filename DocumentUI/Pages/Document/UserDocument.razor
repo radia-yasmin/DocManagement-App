@@ -1,0 +1,132 @@
+﻿@page "/Document/UserDocument"
+@inject HttpClient httpClient
+@inject NavigationManager navigationManager
+@using DocumentUI.Services
+@inject IAuthService authService
+
+
+@if (documentList == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="row">
+        <div class="col-lg-6">
+            <h3>Documents</h3>
+        </div>
+        <div class="col-lg-6">
+            <a class="btn btn-primary pull-right" href="Document/AddDocument" style="float:right">Add New</a>
+        </div>
+    </div>
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Document Name</th>
+                <th>URL</th>
+                <th>Status</th>
+                <th>Action</th>
+                <!-- Add additional columns as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in documentList)
+            {
+                <tr>
+                    <td>@item.Title</td>
+                    <td>@item.Description</td>
+                    <td>@item.Category.Name</td>
+                    <td>@item.FileName</td>
+                    <td><a href="https://localhost:44334/api/Document/download/@item.Id" target="_blank" class="card-link">Document</a></td>
+                    <td>@(item.IsApproved ? "Active" : item.RejectionReason != null ? $"Reject: {item.RejectionReason}" : "Waiting for approvel")</td>
+                    <td>
+                        <button class="btn btn-success" @onclick="() => EditDocument(item.Id)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => DeleteDocument(item.Id)">Delete</button>
+                        @if (item.IsApproved == false && item.RejectionReason != null)
+                        {
+                            <button class="btn btn-secondary" @onclick="() => ApplyAgain(item.Id)">Apply Again</button>
+                        }
+                    </td>
+                    <!-- Add additional columns as needed -->
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Document> documentList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Replace the URL with your API endpoint
+        var apiUrl = $"https://localhost:44334/api/Document/GetUserDocument?UserId={authService.UserId}";
+
+        // Make the HTTP request
+        documentList = await httpClient.GetFromJsonAsync<List<Document>>(apiUrl);
+    }
+
+    private async Task DeleteDocument(int id)
+    {
+        var apiUrl = $"https://localhost:44334/api/Document/{id}";
+
+        var response = await httpClient.DeleteAsync(apiUrl);
+        var rec = await response.Content.ReadAsStringAsync();
+        if (response.IsSuccessStatusCode)
+        {
+            // Reload categories after deletion
+            await OnInitializedAsync();
+        }
+        else
+        {
+            // Handle the error, log, or display an error message
+        }
+    }
+
+    private async Task ApplyAgain(int id)
+    {
+        var apiUrl = $"https://localhost:44334/api/Document/ApplyAgain/{id}";
+
+        var response = await httpClient.GetAsync(apiUrl);
+        var rec = await response.Content.ReadAsStringAsync();
+        if (response.IsSuccessStatusCode)
+        {
+            // Reload categories after deletion
+            await OnInitializedAsync();
+        }
+        else
+        {
+            // Handle the error, log, or display an error message
+        }
+    }
+
+    private void EditDocument(int id)
+    {
+        // Navigate to the Update Category page with the selected category ID
+        navigationManager.NavigateTo($"/Document/UpdateDocument/{id}");
+    }
+
+    public class Document
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string FileName { get; set; }
+        public string FilePath { get; set; }
+        public string UploadedBy { get; set; }
+        public bool IsApproved { get; set; }
+        public int CategoryId { get; set; }
+        public int? SubCategoryId { get; set; }
+        public string RejectionReason { get; set; }
+        public Category Category { get; set; }
+    }
+
+    public class Category
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+}

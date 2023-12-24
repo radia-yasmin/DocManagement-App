@@ -1,32 +1,46 @@
-﻿@page "/"
+﻿@page "/Document/ApprovedDocument"
 @inject HttpClient httpClient
 @inject NavigationManager navigationManager
 
 
-<PageTitle>Index</PageTitle>
-
 @if (documentList == null)
 {
-    <p>Loading Docuemnts...</p>
+    <p>Loading...</p>
 }
 else
 {
     <div class="row">
-        @foreach (var item in documentList)
-        {
-            <div class="col-12 col-md-4 col-lg-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h3 class="card-title">@item.Title</h3>
-                        <h6 class="card-subtitle mb-2 text-muted">@item.Category.Name</h6>
-                        <p class="card-text">@item.Description</p>
-                        <a href="https://localhost:44334/api/Document/download/@item.Id" target="_blank" class="card-link">Download Document</a>
-                        <p>Author: @item.Users.FirstName @item.Users.LastName</p>
-                    </div>
-                </div>
-            </div>
-        }
+        <div class="col-lg-6">
+            <h3>Approved Document</h3>
+        </div>
     </div>
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>User Name (Author)</th>
+                <th>Document Name</th>
+                <th>URL</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in documentList)
+            {
+                <tr>
+                    <td>@item.Title</td>
+                    <td>@item.Description</td>
+                    <td>@item.Category.Name</td>
+                    <td>@item.Users.FirstName @item.Users.LastName</td>
+                    <td>@item.FileName</td>
+                    <td><a href="https://localhost:44334/api/Document/download/@item.Id" target="_blank" class="card-link">Document</a></td>
+                    <td>@(item.IsApproved ? "Active" : "Waiting for approvel")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 }
 
 @code {
@@ -41,12 +55,6 @@ else
         documentList = await httpClient.GetFromJsonAsync<List<Document>>(apiUrl);
     }
 
-    // private async Task DownloadFile(int id)
-    // {
-    //     navigationManager.NavigateTo($"/Document/PDFView/{id}");
-    // }
-
-
     public class Document
     {
         public int Id { get; set; }
@@ -58,6 +66,7 @@ else
         public bool IsApproved { get; set; }
         public int CategoryId { get; set; }
         public int? SubCategoryId { get; set; }
+        public string RejectionReason { get; set; }
         public Category Category { get; set; }
         public Users Users { get; set; }
     }

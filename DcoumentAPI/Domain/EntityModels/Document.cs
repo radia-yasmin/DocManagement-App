@@ -11,14 +11,17 @@ namespace DcoumentAPI.Domain.EntityModels
         public string Description { get; set; }
         public string FileName { get; set; }
         public string FilePath { get; set; }
+        [ForeignKey("Users")]
         public string UploadedBy { get; set; }
         public bool IsApproved { get; set; }
-        
+        public string RejectionReason { get; set; }
+
         [ForeignKey("Category")]
         public int CategoryId { get; set; }
 
         public int? SubCategoryId { get; set; }
 
         public virtual Category Category { get; set; }
+        public virtual Users Users { get; set; }
     }
 }

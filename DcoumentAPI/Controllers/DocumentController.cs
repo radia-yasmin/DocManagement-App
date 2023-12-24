@@ -1,7 +1,9 @@
 ﻿using DcoumentAPI.Domain.Dtos;
 using DcoumentAPI.Domain.EntityModels;
+using DcoumentAPI.Domain.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Rewrite;
 using Microsoft.EntityFrameworkCore;
 
 namespace DcoumentAPI.Controllers
@@ -11,20 +13,31 @@ namespace DcoumentAPI.Controllers
     public class DocumentController : ControllerBase
     {
         private readonly DocumentDbContext _context;
-
         public DocumentController(DocumentDbContext context)
         {
             _context = context;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Document>>> GetDocuments()
+        public async Task<IActionResult> GetDocuments()
         {
-            return await _context.Documents.ToListAsync();
+            return Ok(await _context.Documents.Include(x=>x.Category).Include(x=>x.Users).Where(x => x.IsApproved).ToListAsync());
+        }
+
+        [HttpGet("GetPendingDocuments")]
+        public async Task<IActionResult> GetPendingDocuments()
+        {
+            return Ok(await _context.Documents.Include(x => x.Category).Include(x => x.Users).Where(x => !x.IsApproved).ToListAsync());
+        }
+
+        [HttpGet("GetUserDocument")]
+        public async Task<IActionResult> GetUserDocument(string UserId)
+        {
+            return Ok(await _context.Documents.Include(x => x.Category).Include(x => x.Users).Where(x => x.UploadedBy == UserId).ToListAsync());
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Document>> GetDocument(int id)
+        public async Task<IActionResult> GetDocument(int id)
         {
             var document = await _context.Documents.FindAsync(id);
 
@@ -32,46 +45,98 @@ namespace DcoumentAPI.Controllers
             {
                 return NotFound();
             }
+            var obj = new {Id = document.Id, Title=document.Title, Description = document.Description, FileName = document.FileName, FilePath = document.FilePath, UploadedBy = document.UploadedBy,
+                CategoryId = document.CategoryId
+            };
+            return Ok(obj);
+        }
 
-            return document;
+
+        [HttpGet("ApproveDocument/{id}")]
+
+        public async Task<IActionResult> ApproveDocument(int id)
+        {
+            var document = await _context.Documents.FindAsync(id);
+
+            if (document == null)
+            {
+                return NotFound();
+            }
+            document.IsApproved = true;
+            await _context.SaveChangesAsync();
+            return Ok("Document Approved Successfully!");
+        }
+
+        [HttpGet("ApplyAgain/{id}")]
+
+        public async Task<IActionResult> ApplyAgain(int id)
+        {
+            var document = await _context.Documents.FindAsync(id);
+
+            if (document == null)
+            {
+                return NotFound();
+            }
+            document.IsApproved = false;
+            document.RejectionReason = null;
+            await _context.SaveChangesAsync();
+            return Ok("Document Apply Again for approvel Successfully!");
         }
 
         [HttpPost]
-        public async Task<ActionResult<Document>> CreateDocument([FromBody] Document document)
+        public async Task<IActionResult> PostDocument(DocumentUploadDto document)
         {
-            _context.Documents.Add(document);
+            Document model = new Document();
+            model.Title = document.Title;
+            model.Description = document.Description;
+            model.FileName = document.FileName;
+            model.FilePath = document.FilePath;
+            model.UploadedBy = document.UploadedBy;
+            model.CategoryId = document.CategoryId;
+            _context.Documents.Add(model);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetDocument), new { id = document.Id }, document);
+            return Ok("Document Update Successfully");
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDocument(int id, [FromBody] Document document)
+
+        [HttpPost("RejectDocument")]
+        public async Task<IActionResult> RejectDocument(DocumentRejectDto document)
         {
-            if (id != document.Id)
-            {
-                return BadRequest();
-            }
+            var data = await _context.Documents.FindAsync(document.Id);
+            data.RejectionReason = document.RejectionReason;
+            await _context.SaveChangesAsync();
 
-            _context.Entry(document).State = EntityState.Modified;
+            return Ok("Document Rejection Reason Update Successfully");
+        }
 
+
+        [HttpPut]
+        public async Task<IActionResult> PutDocument(DocumentUploadDto document)
+        {
             try
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DocumentExists(id))
+                if (document.Id < 0)
                 {
-                    return NotFound();
+                    return BadRequest();
                 }
-                else
-                {
-                    throw;
-                }
-            }
+                var model = await _context.Documents.FindAsync(document.Id);
+                model.Title = document.Title;
+                model.Description = document.Description;
+                model.FileName = document.FileName;
+                model.FilePath = document.FilePath;
+                model.UploadedBy = document.UploadedBy;
+                model.CategoryId = document.CategoryId;
 
-            return NoContent();
+                await _context.SaveChangesAsync();
+                return Ok("Document Update Successfully");
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+            
         }
 
         [HttpDelete("{id}")]
@@ -82,16 +147,91 @@ namespace DcoumentAPI.Controllers
             {
                 return NotFound();
             }
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "Document\\files", document.FilePath);
 
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound(); // Return 404 if the file does not exist
+            }
+            else
+            {
+                System.IO.File.Delete(filePath);
+            }
             _context.Documents.Remove(document);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok("Document Remove Successfully");
         }
 
-        private bool DocumentExists(int id)
+        [HttpGet("RemoveDocumentFile/{id}")]
+        public async Task<IActionResult> RemoveDocumentFile(int id)
         {
-            return _context.Documents.Any(e => e.Id == id);
+            var document = await _context.Documents.FindAsync(id);
+            if (document == null)
+            {
+                return NotFound();
+            }
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "Document\\files", document.FilePath);
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound(); // Return 404 if the file does not exist
+            }
+            else
+            {
+                System.IO.File.Delete(filePath);
+                return Ok("Document file Remove Successfully");
+
+            }
         }
+
+        [HttpPost("UploadDocument")]
+        public IActionResult UploadDocument(IFormFile file)
+        {
+            string fileName = "";
+            try
+            {
+                fileName = FileHandler.UploadFile(file, Path.Combine(Directory.GetCurrentDirectory(), "Document\\files"), "files");
+                return Ok(fileName);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpGet("download/{id}")]
+        public async Task<IActionResult> DownloadFile(int id)
+        {
+            var document = await _context.Documents.FindAsync(id);
+
+            if (document == null)
+            {
+                return NotFound(); // Return 404 if the document with the specified id is not found
+            }
+
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "Document\\files", document.FilePath);
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound(); // Return 404 if the file does not exist
+            }
+
+            var memory = new MemoryStream();
+
+            using (var stream = new FileStream(filePath, FileMode.Open))
+            {
+                await stream.CopyToAsync(memory);
+            }
+
+            memory.Position = 0;
+
+            // Determine the content type based on the file extension
+            var contentType = "application/octet-stream";
+
+            // Return the file as a FileStreamResult
+            return File(memory, contentType, document.FileName);
+        }
+
     }
 }

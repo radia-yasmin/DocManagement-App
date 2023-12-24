@@ -1,0 +1,190 @@
+﻿@page "/Document/PendingDocument"
+@inject HttpClient httpClient
+@inject NavigationManager navigationManager
+@using System.Text.Json
+
+@if (documentList == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="row">
+        <div class="col-lg-6">
+            <h3>Pending Document</h3>
+        </div>
+        @*         <div class="col-lg-6">
+    <a class="btn btn-primary pull-right" href="Category/AddCategory" style="float:right">Create</a>
+    </div>*@
+    </div>
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>User Name (Author)</th>
+                <th>Document Name</th>
+                <th>URL</th>
+                <th>Status</th>
+                <th>Action</th>
+                <!-- Add additional columns as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in documentList)
+            {
+                <tr>
+                    <td>@item.Title</td>
+                    <td>@item.Description</td>
+                    <td>@item.Category.Name</td>
+                    <td>@item.Users.FirstName @item.Users.LastName</td>
+                    <td>@item.FileName</td>
+                    <td><a href="https://localhost:44334/api/Document/download/@item.Id" target="_blank" class="card-link">Document</a></td>
+                    <td>@(item.IsApproved ? "Active" : item.RejectionReason != null ? $"Reject: {item.RejectionReason}" : "Waiting for approvel")</td>
+                    <td>
+                        @if (item.IsApproved == false && item.RejectionReason == null)
+                        {
+                            <button class="btn btn-success" @onclick="() => ApprovedDocument(item.Id)">Approve</button>
+                            <button class="btn btn-primary" @onclick="() => ShowModal(item.Id)">Reject</button>
+                        }
+                    </td>
+                    <!-- Add additional columns as needed -->
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="modal" tabindex="-1" role="dialog" style="display: @(showModal ? "block" : "none")">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reason Of Reject</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseModal">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form @onsubmit="DocumentRejectSubmit">
+                <div class="modal-body">
+                    <!-- Your modal content goes here -->
+
+                    <div class="row">
+                        <input hidden="hidden" @bind="reject.Id" />
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label for="categoryName">Reason:</label>
+                                <textarea class="form-control" @bind="reject.RejectionReason" required></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick="CloseModal">Close</button>
+                    <button class="btn btn-success">Save</button>
+                    <!-- Additional buttons if needed -->
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Document> documentList;
+    DocumentReject reject = new DocumentReject();
+
+
+    private bool showModal = false;
+
+    private void ShowModal(int id)
+    {
+        reject.Id = id;
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+    }
+
+    private async Task DocumentRejectSubmit()
+    {
+        var rej = reject;
+        var apiUrl = "https://localhost:44334/api/Document/RejectDocument";
+
+        var content = new StringContent(JsonSerializer.Serialize(reject), System.Text.Encoding.UTF8, "application/json");
+
+        var response = await httpClient.PostAsync(apiUrl, content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            showModal = false;
+            await OnInitializedAsync();
+        }
+        else
+        {
+            
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Replace the URL with your API endpoint
+        var apiUrl = "https://localhost:44334/api/Document/GetPendingDocuments";
+
+        // Make the HTTP request
+        documentList = await httpClient.GetFromJsonAsync<List<Document>>(apiUrl);
+    }
+
+    private async Task ApprovedDocument(int id)
+    {
+        var apiUrl = $"https://localhost:44334/api/Document/ApproveDocument/{id}";
+
+        var response = await httpClient.GetAsync(apiUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Reload categories after deletion
+            await OnInitializedAsync();
+        }
+        else
+        {
+            // Handle the error, log, or display an error message
+        }
+    }
+
+
+    public class Document
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public string FileName { get; set; }
+        public string FilePath { get; set; }
+        public string UploadedBy { get; set; }
+        public bool IsApproved { get; set; }
+        public int CategoryId { get; set; }
+        public int? SubCategoryId { get; set; }
+        public string RejectionReason { get; set; }
+        public Category Category { get; set; }
+        public Users Users { get; set; }
+    }
+
+    public class Category
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class Users
+    {
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+    }
+
+    public class DocumentReject
+    {
+        public int Id { get; set; }
+        public string RejectionReason { get; set; }
+    }
+}
